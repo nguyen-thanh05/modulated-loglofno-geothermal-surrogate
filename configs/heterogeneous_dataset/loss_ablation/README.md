@@ -13,16 +13,15 @@ training component:
 | `modulated_loglo_hetero_no_h1.yml` | H1 loss |
 | `modulated_loglo_hetero_no_mbe.yml` | Mass-balance loss |
 | `modulated_loglo_hetero_no_spectral.yml` | Radial spectral loss |
-| `modulated_loglo_hetero_no_meanfield.yml` | Mean-field pressure loss |
 | `modulated_loglo_hetero_no_pushforward.yml` | Pushforward training |
 
 MSE remains enabled in every run. Disabled loss weights are retained at their
 control values so the boolean toggle is the only functional loss change.
 
-All five experiments log to the W&B project
+All four experiments log to the W&B project
 `MODULATED_LOGLOFNO_HETERO_loss_ablation` and use unique checkpoint filenames.
 
-Preview the 20 submitted jobs (five experiments, four chained segments each):
+Preview the 16 submitted jobs (four experiments, four chained segments each):
 
 ```bash
 python slurm/launch_loss_ablation.py --dry-run

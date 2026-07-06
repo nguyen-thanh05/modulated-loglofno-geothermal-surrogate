@@ -20,7 +20,6 @@ CONFIGS = (
     "configs/heterogeneous_dataset/loss_ablation/modulated_loglo_hetero_no_h1.yml",
     "configs/heterogeneous_dataset/loss_ablation/modulated_loglo_hetero_no_mbe.yml",
     "configs/heterogeneous_dataset/loss_ablation/modulated_loglo_hetero_no_spectral.yml",
-    "configs/heterogeneous_dataset/loss_ablation/modulated_loglo_hetero_no_meanfield.yml",
     "configs/heterogeneous_dataset/loss_ablation/modulated_loglo_hetero_no_pushforward.yml",
 )
 

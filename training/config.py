@@ -50,8 +50,6 @@ class LossConfig:
     spectral_weight: float
     spectral_iLow: int
     spectral_iHigh: int
-    use_meanfield: bool
-    meanfield_weight: float
 
 
 @dataclass
@@ -139,10 +137,8 @@ def build_run_config(cfg, args):
             mbe_weight=cfg['loss'].get('mbe_weight', 1.0),
             use_spectral=cfg['loss'].get('use_spectral', True),
             spectral_weight=cfg['loss'].get('spectral_weight', 0.0),
-            spectral_iLow=cfg['loss'].get('spectral_iLow', 4),
-            spectral_iHigh=cfg['loss'].get('spectral_iHigh', 12),
-            use_meanfield=cfg['loss'].get('use_meanfield', True),
-            meanfield_weight=cfg['loss'].get('meanfield_weight', 1.0),
+            spectral_iLow=cfg['loss'].get('spectral_iLow', 2),
+            spectral_iHigh=cfg['loss'].get('spectral_iHigh', 10),
         ),
         logging=LoggingConfig(
             writer=cfg['logging']['writer'],

@@ -26,7 +26,7 @@ training:
   weight_decay: 1.0e-4
   ema_decay: 0.9995
   log_every: 20
-  grad_clip_norm: 8.0
+  grad_clip_norm: 1.0
   noise_alpha: [0.0025, 0.0025, 0.025, 0.025]
   use_pushforward: true
   pushforward_k_max: 10
@@ -39,16 +39,14 @@ loss:
   use_mse: true
   mse_weight: 3.0
   use_h1: false
-  h1_weight: 0.5
+  h1_weight: 1.0
   use_mbe: true
-  mbe_weight: 1.0
+  mbe_weight: 2.0
   use_spectral: true
   spectral_weight: 3.0
-  spectral_iLow: 4
-  spectral_iHigh: 12
-  use_meanfield: true
-  meanfield_weight: 2.0
-  channel_weights: [1.0, 1.0, 2.0, 2.0]
+  spectral_iLow: 2
+  spectral_iHigh: 10
+  channel_weights: [1.0, 1.0, 1.0, 1.0]
 
 logging:
   writer: true

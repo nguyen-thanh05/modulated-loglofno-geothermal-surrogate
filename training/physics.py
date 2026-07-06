@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as F
 
 
 beta = 8.8e-4       # thermal expansion coefficient [1/°C]
@@ -58,12 +57,6 @@ def compute_mbe_loss(y_t, y_tp1, action_normalized, phi_m, phi_frac, *,
     return torch.mean(residual ** 2)
 
 
-def mean_field_pressure_loss(pred, target):
-    pred_mean = pred[:, 2:4].mean(dim=(2, 3, 4))
-    target_mean = target[:, 2:4].mean(dim=(2, 3, 4))
-    return F.mse_loss(pred_mean, target_mean)
-
-
 def add_adaptive_noise(y, alpha=(0.0025, 0.0025, 0.025, 0.025), eps=1e-8):
     mu = y.mean(dim=(2, 3, 4), keepdim=True)
     sigma = torch.sqrt(((y - mu) ** 2).mean(dim=(2, 3, 4), keepdim=True) + eps)
@@ -72,7 +65,7 @@ def add_adaptive_noise(y, alpha=(0.0025, 0.0025, 0.025, 0.025), eps=1e-8):
     return y + alpha_t * sigma * N
 
 
-def radial_binned_spectral_loss(preds, target, iLow=4, iHigh=12):
+def radial_binned_spectral_loss(preds, target, iLow=2, iHigh=10):
     B, C, D, H, W = target.shape
     device = target.device
 

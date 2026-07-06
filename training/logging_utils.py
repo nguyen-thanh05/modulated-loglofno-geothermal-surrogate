@@ -50,7 +50,6 @@ class TrainingLogger:
             'Loss/Spectral_Low': one_step_loss.spectral_bands[0].item(),
             'Loss/Spectral_Mid': one_step_loss.spectral_bands[1].item(),
             'Loss/Spectral_High': one_step_loss.spectral_bands[2].item(),
-            'Loss/MeanField': one_step_loss.loss_meanfield.item(),
             'Loss/Total': total_loss.item(),
             'Loss/Pushforward': loss_pf.item(),
             'Training/k': k,
