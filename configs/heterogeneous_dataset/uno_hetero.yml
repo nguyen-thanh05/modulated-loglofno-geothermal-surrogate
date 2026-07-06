@@ -60,7 +60,7 @@ loss:
 
 logging:
   writer: true
-  wandb_project: "LOGLOFNO_HETERO_exp"
+  wandb_project: "heterogeneous"
   wandb_entity: null
   watch_model: false
   log_scalar_every: 10

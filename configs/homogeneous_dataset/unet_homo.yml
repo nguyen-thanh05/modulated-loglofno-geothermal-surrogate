@@ -50,7 +50,7 @@ loss:
 
 logging:
   writer: true
-  wandb_project: "LOGLOFNO_HOMO_exp"
+  wandb_project: "homogeneous"
   wandb_entity: null
   watch_model: false
   log_scalar_every: 10

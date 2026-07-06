@@ -22,7 +22,9 @@ class TrainingLogger:
         run_tag = self.cfg.logging.run_tag
         run_name = f"{model_type}{run_tag}-{variant}-seed{self.cfg.seed}"
         init_kwargs = dict(
-            project=self.cfg.logging.wandb_project or f'LOGLOFNO_{variant.upper()}_exp',
+            project=self.cfg.logging.wandb_project or (
+                'heterogeneous' if self.cfg.data.heterogeneous else 'homogeneous'
+            ),
             entity=self.cfg.logging.wandb_entity,
             name=run_name,
             config=self.cfg.raw,
