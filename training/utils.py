@@ -33,14 +33,10 @@ def build_action_for_mbe(action):
 
 
 @torch.no_grad()
-def update_ema(ema_model, model, ema_aux, aux_model, decay):
+def update_ema(ema_model, model, decay):
     for ema_p, model_p in zip(ema_model.parameters(), model.parameters()):
         ema_p.lerp_(model_p, 1.0 - decay)
     for ema_b, model_b in zip(ema_model.buffers(), model.buffers()):
-        ema_b.copy_(model_b)
-    for ema_p, model_p in zip(ema_aux.parameters(), aux_model.parameters()):
-        ema_p.lerp_(model_p, 1.0 - decay)
-    for ema_b, model_b in zip(ema_aux.buffers(), aux_model.buffers()):
         ema_b.copy_(model_b)
 
 

@@ -28,7 +28,6 @@ def build_data_loaders(run_config):
     dataset_action = np.load(os.path.join(data_path, 'all_action.npy'), mmap_mode=mode)
     dataset_temp_frac = np.load(os.path.join(data_path, 'all_temp_frac.npy'), mmap_mode=mode)
     dataset_pres_frac = np.load(os.path.join(data_path, 'all_pres_frac.npy'), mmap_mode=mode)
-    dataset_aux = np.load(os.path.join(data_path, 'all_energyrate_bhp.npy'), mmap_mode=mode)
 
     extra_kwargs = {}
     if run_config.data.heterogeneous:
@@ -42,7 +41,7 @@ def build_data_loaders(run_config):
 
     dataset = ARDataset(
         dataset_temp, dataset_temp_frac, dataset_pres, dataset_pres_frac,
-        dataset_action, dataset_aux, k_max=k_max, **extra_kwargs,
+        dataset_action, k_max=k_max, **extra_kwargs,
     )
 
     print("Dataset:", dataset.n_trajectories, "trajectories,",

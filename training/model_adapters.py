@@ -41,7 +41,7 @@ class DualTensorAdapter:
 
 
 def create_adapter(model_type, heterogeneous):
-    if model_type in ('unet3d', 'fno', 'transolver', 'vanilla_loglo'):
+    if model_type in ('unet3d', 'fno', 'uno', 'vanilla_loglo'):
         return SingleTensorAdapter(heterogeneous=heterogeneous)
     elif model_type == 'modulated_loglo':
         return DualTensorAdapter(heterogeneous=heterogeneous)

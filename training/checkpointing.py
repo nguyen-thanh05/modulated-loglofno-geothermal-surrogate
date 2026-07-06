@@ -81,7 +81,7 @@ class CheckpointManager:
         )
 
     def apply_resume_state(
-        self, resume_state, *, model, ema_model, aux_head, ema_aux,
+        self, resume_state, *, model, ema_model,
         optimizer, scheduler, loader_gen
     ):
         resume_ckpt = resume_state.checkpoint
@@ -92,8 +92,6 @@ class CheckpointManager:
         resume_ckpt['ema_model'].pop('_metadata', None)
         model.load_state_dict(resume_ckpt['model'])
         ema_model.load_state_dict(resume_ckpt['ema_model'])
-        aux_head.load_state_dict(resume_ckpt['aux_head'])
-        ema_aux.load_state_dict(resume_ckpt['ema_aux'])
         restore_rng_states(resume_ckpt['rng_states'], loader_gen)
 
         optimizer_restored = False
@@ -113,15 +111,13 @@ class CheckpointManager:
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
-    def save_resume(self, *, model, ema_model, aux_head, ema_aux,
+    def save_resume(self, *, model, ema_model,
                     optimizer, scheduler, epoch, global_step, loader_gen,
                     wandb_run_id):
         self._save_weights_checkpoint(
             self.cfg.resume_ckpt_path,
             model=model,
             ema_model=ema_model,
-            aux_head=aux_head,
-            ema_aux=ema_aux,
             epoch=epoch,
             global_step=global_step,
             rng_states=capture_rng_states(loader_gen),
@@ -134,13 +130,11 @@ class CheckpointManager:
             epoch=epoch,
         )
 
-    def save_final(self, *, model, ema_model, aux_head, ema_aux):
+    def save_final(self, *, model, ema_model):
         os.makedirs(os.path.dirname(self.cfg.final_path) or '.', exist_ok=True)
         torch.save({
             'model': model.state_dict(),
             'ema_model': ema_model.state_dict(),
-            'aux_head': aux_head.state_dict(),
-            'ema_aux': ema_aux.state_dict(),
         }, self.cfg.final_path)
 
     def remove_resume_files(self):
@@ -149,15 +143,13 @@ class CheckpointManager:
                 os.remove(path)
                 print(f"[CHECKPOINT] Training complete. Removed {os.path.basename(path)}")
 
-    def _save_weights_checkpoint(self, path, *, model, ema_model, aux_head, ema_aux,
+    def _save_weights_checkpoint(self, path, *, model, ema_model,
                                  epoch, global_step, rng_states, wandb_run_id):
         os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
         tmp_path = path + '.tmp'
         torch.save({
             'model': _clean_state_dict(model),
             'ema_model': _clean_state_dict(ema_model),
-            'aux_head': aux_head.state_dict(),
-            'ema_aux': ema_aux.state_dict(),
             'epoch': epoch,
             'global_step': global_step,
             'rng_states': rng_states,

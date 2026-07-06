@@ -11,7 +11,6 @@ class ARDataset(Dataset):
         pres_formation,
         pres_frac,
         action,
-        aux_energy_bhp,
         k_max=5,
         *,
         heterogeneous=False,
@@ -25,14 +24,12 @@ class ARDataset(Dataset):
         self.pres_formation = pres_formation
         self.pres_frac = pres_frac
         self.action = action
-        self.aux_energy_bhp = aux_energy_bhp
         self.heterogeneous = heterogeneous
 
         self.temp_min = 20.0
         self.temp_max = 185.0
         self.action_min = 0.0
         self.action_max = 5000.0
-        self.energy_max = 2.9e12
 
         if heterogeneous:
             assert por_matrix is not None, "hetero mode requires por_matrix"
@@ -57,7 +54,6 @@ class ARDataset(Dataset):
         self._temp_range = self.temp_max - self.temp_min
         self._pres_range = self.pres_max - self.pres_min
         self._action_range = self.action_max - self.action_min
-        self._energy_log_denom = np.log1p(self.energy_max)
 
         self.k_max = k_max
         self.n_trajectories = len(temp_formation)
@@ -80,12 +76,6 @@ class ARDataset(Dataset):
         a = (self._to_tensor(self.action[idx, step]) - self.action_min) / self._action_range
         return a.float()
 
-    def _aux_at(self, idx, step):
-        aux = self._to_tensor(self.aux_energy_bhp[idx, step]).float()
-        energy_rate = torch.log1p(aux[9:]) / self._energy_log_denom
-        bhp = (aux[0:9] - self.pres_min) / self._pres_range
-        return torch.cat([energy_rate, bhp], dim=0)
-
     def _static_at(self, idx):
         pm = (self._to_tensor(self.por_matrix[idx]) - self.por_min_matrix) / (self.por_max_matrix - self.por_min_matrix)
         pf = (self._to_tensor(self.por_frac[idx]) - self.por_min_frac) / (self.por_max_frac - self.por_min_frac)
@@ -99,8 +89,6 @@ class ARDataset(Dataset):
         y_t = self._state_at(idx, t)
         y_tp1 = self._state_at(idx, t + 1)
         action_t = self._action_at(idx, t)
-        aux_t = self._aux_at(idx, t)
-        aux_tp1 = self._aux_at(idx, t + 1)
 
         y_history = []
         action_history = []
@@ -120,7 +108,7 @@ class ARDataset(Dataset):
         action_history = torch.stack(action_history, dim=0)
         valid_k = torch.tensor(valid_k, dtype=torch.float)
 
-        base = (y_history, action_history, valid_k, y_t, y_tp1, action_t, aux_t, aux_tp1)
+        base = (y_history, action_history, valid_k, y_t, y_tp1, action_t)
 
         if self.heterogeneous:
             return base + (self._static_at(idx),)

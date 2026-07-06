@@ -12,7 +12,7 @@
 
 if [ -z "$CONFIG" ] || [ -z "$SEED" ]; then
     echo "ERROR: CONFIG and SEED must be set."
-    echo "Usage: sbatch --export=ALL,CONFIG=configs/homogeneous_dataset/fno_m4x16x8_h64_homo.yml,SEED=42 slurm/train.sh"
+    echo "Usage: sbatch --export=ALL,CONFIG=configs/homogeneous_dataset/fno_m8x32x16_h64_homo.yml,SEED=42 slurm/train.sh"
     exit 1
 fi
 

@@ -43,8 +43,6 @@ class LossConfig:
     mse_weight: float
     use_h1: bool
     h1_weight: float
-    use_aux: bool
-    aux_weight: float
     channel_weights: Any
     use_mbe: bool
     mbe_weight: float
@@ -136,8 +134,6 @@ def build_run_config(cfg, args):
             mse_weight=cfg['loss'].get('mse_weight', 1.0),
             use_h1=cfg['loss'].get('use_h1', True),
             h1_weight=cfg['loss'].get('h1_weight', 1.0),
-            use_aux=cfg['loss'].get('use_aux', True),
-            aux_weight=cfg['loss'].get('aux_weight', 0.1),
             channel_weights=cfg['loss']['channel_weights'],
             use_mbe=cfg['loss'].get('use_mbe', True),
             mbe_weight=cfg['loss'].get('mbe_weight', 1.0),

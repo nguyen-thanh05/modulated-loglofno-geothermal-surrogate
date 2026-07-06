@@ -10,12 +10,9 @@ import sys
 MODELS = {
     'modulated_loglo':   {'display': 'Modulated LOGLO_FNO', 'config_prefix': 'modulated_loglo'},
     'fno_m8x32x16_h64':  {'display': 'FNO m8x32x16 h64', 'config_prefix': 'fno_m8x32x16_h64'},
-    'fno_m4x16x8_h64':   {'display': 'FNO m4x16x8 h64',  'config_prefix': 'fno_m4x16x8_h64'},
     'fno_m4x16x8_h128':  {'display': 'FNO m4x16x8 h128', 'config_prefix': 'fno_m4x16x8_h128'},
-    'unet_d3':           {'display': 'UNet3D d3',         'config_prefix': 'unet_d3'},
-    'unet_d4':           {'display': 'UNet3D d4',         'config_prefix': 'unet_d4'},
-    'transolver':        {'display': 'Transolver',        'config_prefix': 'transolver'},
-    'transolver_h128_s64': {'display': 'Transolver h128 s64', 'config_prefix': 'transolver_h128_s64'},
+    'unet':              {'display': 'UNet3D',          'config_prefix': 'unet'},
+    'uno':               {'display': 'UNO',             'config_prefix': 'uno'},
     'vanilla_loglo':     {'display': 'Vanilla LOGLO_FNO',  'config_prefix': 'vanilla_loglo'},
 }
 
@@ -24,7 +21,8 @@ CONFIG_DIR_BY_VARIANT = {
     'homo': 'homogeneous_dataset',
     'hetero': 'heterogeneous_dataset',
 }
-JOBS_PER_CHAIN = 3
+DEFAULT_JOBS_PER_CHAIN = 4
+LOGLO_JOBS_PER_CHAIN = 4
 SLURM_TEMPLATE = 'slurm/train.sh'
 
 
@@ -32,6 +30,18 @@ def get_config_path(model_key, variant):
     prefix = MODELS[model_key]['config_prefix']
     config_dir = CONFIG_DIR_BY_VARIANT[variant]
     return os.path.join('configs', config_dir, f'{prefix}_{variant}.yml')
+
+
+def default_jobs_per_chain(model_key):
+    if 'loglo' in model_key:
+        return LOGLO_JOBS_PER_CHAIN
+    return DEFAULT_JOBS_PER_CHAIN
+
+
+def resolve_jobs_per_chain(model_key, jobs_per_chain):
+    if jobs_per_chain is not None:
+        return jobs_per_chain
+    return default_jobs_per_chain(model_key)
 
 
 def submit_chain(config_path, seed, jobs_per_chain, dry_run=False):
@@ -81,7 +91,7 @@ def pick_numbered(prompt, options, allow_all=True):
         sys.exit(1)
 
 
-def interactive_mode(dry_run=False, jobs_per_chain=JOBS_PER_CHAIN):
+def interactive_mode(dry_run=False, jobs_per_chain=None):
     print('\n=== HPC Job Launcher ===\n')
 
     model_keys = list(MODELS.keys())
@@ -104,7 +114,11 @@ def interactive_mode(dry_run=False, jobs_per_chain=JOBS_PER_CHAIN):
             print('Seeds must be integers.')
             sys.exit(1)
 
-    raw = input(f'\nSegments per experiment [{jobs_per_chain}]: ').strip()
+    default_label = (
+        f'auto (LOGLO {LOGLO_JOBS_PER_CHAIN}, others {DEFAULT_JOBS_PER_CHAIN})'
+        if jobs_per_chain is None else str(jobs_per_chain)
+    )
+    raw = input(f'\nSegments per experiment [{default_label}]: ').strip()
     if raw:
         try:
             jobs_per_chain = int(raw)
@@ -166,12 +180,18 @@ def cli_mode(args, dry_run=False):
 
 
 def print_summary(experiments, jobs_per_chain):
-    total_jobs = len(experiments) * jobs_per_chain
-    print(f'\n{"Model":<12} {"Variant":<10} {"Seed":<12} {"Config"}')
-    print('-' * 60)
+    rows = []
+    total_jobs = 0
     for mk, var, seed, config in experiments:
-        print(f'{MODELS[mk]["display"]:<12} {var:<10} {seed:<12} {config}')
-    print(f'\nTotal: {len(experiments)} experiments x {jobs_per_chain} segments = {total_jobs} SLURM jobs\n')
+        segment_count = resolve_jobs_per_chain(mk, jobs_per_chain)
+        rows.append((MODELS[mk]['display'], var, seed, segment_count, config))
+        total_jobs += segment_count
+
+    print(f'\n{"Model":<22} {"Variant":<10} {"Seed":<12} {"Segments":<8} {"Config"}')
+    print('-' * 82)
+    for display, var, seed, segment_count, config in rows:
+        print(f'{display:<22} {var:<10} {seed:<12} {segment_count:<8} {config}')
+    print(f'\nTotal: {len(experiments)} experiments = {total_jobs} SLURM jobs\n')
 
 
 def submit_experiments(experiments, jobs_per_chain, dry_run=False):
@@ -180,7 +200,8 @@ def submit_experiments(experiments, jobs_per_chain, dry_run=False):
 
     for mk, var, seed, config in experiments:
         display = MODELS[mk]['display']
-        job_ids = submit_chain(config, seed, jobs_per_chain, dry_run=dry_run)
+        segment_count = resolve_jobs_per_chain(mk, jobs_per_chain)
+        job_ids = submit_chain(config, seed, segment_count, dry_run=dry_run)
         all_job_ids.extend(job_ids)
 
         print(f'{display} / {var} / seed{seed}:')
@@ -203,9 +224,10 @@ def main():
     parser.add_argument('--seeds', type=str, default=None,
                         help='JSON dict mapping model key to comma-separated seeds, '
                              'e.g. \'{"fno":"42,123","unet3d":"42"}\'')
-    parser.add_argument('--jobs-per-chain', type=int, default=JOBS_PER_CHAIN,
-                        help=f'Chained segments per experiment (default {JOBS_PER_CHAIN}). '
-                             'Raise for slow models that need >3 segments, e.g. transolver.')
+    parser.add_argument('--jobs-per-chain', type=int, default=None,
+                        help='Override chained segments per experiment. '
+                             f'Default: LOGLO={LOGLO_JOBS_PER_CHAIN}, '
+                             f'others={DEFAULT_JOBS_PER_CHAIN}.')
     parser.add_argument('--dry-run', action='store_true',
                         help='Print sbatch commands without submitting')
     args = parser.parse_args()

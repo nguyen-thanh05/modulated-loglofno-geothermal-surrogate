@@ -1,10 +1,10 @@
 """Model package exports.
 
 The heavy model modules are imported lazily so lightweight utilities can import
-submodules such as ``models.aux_head`` without initializing optional dependencies.
+submodules without initializing optional dependencies.
 """
 
-__all__ = ["ModulatedLOGLO_FNO", "FNOWrapper", "UNet3D", "AuxHead"]
+__all__ = ["ModulatedLOGLO_FNO", "FNOWrapper", "UNOWrapper", "UNet3D"]
 
 
 def __getattr__(name):
@@ -16,12 +16,12 @@ def __getattr__(name):
         from .fno_wrapper import FNOWrapper
 
         return FNOWrapper
+    if name == "UNOWrapper":
+        from .uno_wrapper import UNOWrapper
+
+        return UNOWrapper
     if name == "UNet3D":
         from .unet3d import UNet3D
 
         return UNet3D
-    if name == "AuxHead":
-        from .aux_head import AuxHead
-
-        return AuxHead
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

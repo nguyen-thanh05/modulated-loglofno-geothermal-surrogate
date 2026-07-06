@@ -5,7 +5,6 @@ import os
 import numpy as np
 import torch
 
-from models.aux_head import AuxHead
 from training.checkpointing import CheckpointManager
 from training.config import build_run_config
 from training.constants import WELL_COORDS
@@ -13,7 +12,7 @@ from training.data_setup import build_data_loaders
 from training.logging_utils import TrainingLogger
 from training.loss_computation import LossComputer
 from training.model_adapters import create_adapter
-from training.model_factory import create_model, get_hidden_dim, get_out_channels
+from training.model_factory import create_model
 from training.physics import add_adaptive_noise
 from training.utils import get_device, set_seed, update_ema
 
@@ -34,20 +33,9 @@ class Trainer:
         model_type = run_config.model.type
         self.model = create_model(model_cfg, model_type).to(self.device)
 
-        self.aux_head_model = AuxHead(
-            state_channels=get_out_channels(model_cfg),
-            depth=16,
-            aux_channels=model_cfg.get('aux_channels', 16),
-            hidden_dim=get_hidden_dim(model_cfg),
-        ).to(self.device)
-
         self.ema_model = copy.deepcopy(self.model)
         self.ema_model.requires_grad_(False)
         self.ema_model.eval()
-
-        self.ema_aux = copy.deepcopy(self.aux_head_model)
-        self.ema_aux.requires_grad_(False)
-        self.ema_aux.eval()
 
         self.adapter = create_adapter(model_type, run_config.data.heterogeneous)
         self.loss_computer = LossComputer(
@@ -58,7 +46,7 @@ class Trainer:
         )
 
         self.optimizer = torch.optim.AdamW(
-            list(self.model.parameters()) + list(self.aux_head_model.parameters()),
+            self.model.parameters(),
             lr=run_config.training.lr,
             weight_decay=run_config.training.weight_decay,
         )
@@ -101,15 +89,12 @@ class Trainer:
 
         self.wandb_run_id = self.logger.setup(
             model=self.model,
-            aux_head_model=self.aux_head_model,
             wandb_run_id=self.wandb_run_id,
         )
         self.checkpoints.apply_resume_state(
             resume_state,
             model=self.model,
             ema_model=self.ema_model,
-            aux_head=self.aux_head_model,
-            ema_aux=self.ema_aux,
             optimizer=self.optimizer,
             scheduler=self.scheduler,
             loader_gen=self.data.loader_gen,
@@ -133,13 +118,12 @@ class Trainer:
             self.optimizer.zero_grad()
             total_loss.backward()
             torch.nn.utils.clip_grad_norm_(
-                list(self.model.parameters()) + list(self.aux_head_model.parameters()),
+                self.model.parameters(),
                 max_norm=self.cfg.training.grad_clip_norm)
             self.optimizer.step()
             self.scheduler.step()
             update_ema(
                 self.ema_model, self.model,
-                self.ema_aux, self.aux_head_model,
                 self.cfg.training.ema_decay,
             )
 
@@ -159,8 +143,6 @@ class Trainer:
             self.checkpoints.save_resume(
                 model=self.model,
                 ema_model=self.ema_model,
-                aux_head=self.aux_head_model,
-                ema_aux=self.ema_aux,
                 optimizer=self.optimizer,
                 scheduler=self.scheduler,
                 epoch=epoch,
@@ -174,8 +156,7 @@ class Trainer:
 
     def _train_batch(self, batch):
         (
-            y_history, action_history, valid_k, y_t, y_tp1, action_t,
-            aux_t, aux_tp1, static,
+            y_history, action_history, valid_k, y_t, y_tp1, action_t, static,
         ) = self._unpack_batch(batch)
 
         train_cfg = self.cfg.training
@@ -193,8 +174,6 @@ class Trainer:
         y_t = y_t.to(self.device)
         y_tp1 = y_tp1.to(self.device)
         action_t = action_t.to(self.device)
-        aux_t = aux_t.to(self.device)
-        aux_tp1 = aux_tp1.to(self.device)
 
         if torch.rand(1).item() < 0.8:
             y_noisy = add_adaptive_noise(y_t, alpha=train_cfg.noise_alpha)
@@ -203,15 +182,12 @@ class Trainer:
 
         model_input = self.adapter.build_model_input(y_noisy, action_t, static)
         predicted_y = self.adapter.forward(self.model, model_input)
-        predicted_aux = self.aux_head_model(y_t, predicted_y)
 
         one_step_loss = self.loss_computer.compute_one_step_loss(
             predicted_y=predicted_y,
-            predicted_aux=predicted_aux,
             y_t=y_t,
             y_tp1=y_tp1,
             action_t=action_t,
-            aux_tp1=aux_tp1,
             static=static,
         )
         loss_pf = self._compute_pushforward_loss(
@@ -221,7 +197,6 @@ class Trainer:
             valid_k=valid_k,
             y_tp1=y_tp1,
             action_t=action_t,
-            aux_tp1=aux_tp1,
             static=static,
         )
 
@@ -233,17 +208,15 @@ class Trainer:
     def _unpack_batch(self, batch):
         if self.cfg.data.heterogeneous:
             (
-                y_history, action_history, valid_k, y_t, y_tp1, action_t,
-                aux_t, aux_tp1, static,
+                y_history, action_history, valid_k, y_t, y_tp1, action_t, static,
             ) = batch
             static = static.to(self.device)
         else:
             (
                 y_history, action_history, valid_k, y_t, y_tp1, action_t,
-                aux_t, aux_tp1,
             ) = batch
             static = None
-        return y_history, action_history, valid_k, y_t, y_tp1, action_t, aux_t, aux_tp1, static
+        return y_history, action_history, valid_k, y_t, y_tp1, action_t, static
 
     def _mask_actions(self, action_history, action_t):
         for well in WELL_COORDS:
@@ -252,7 +225,7 @@ class Trainer:
 
     def _compute_pushforward_loss(
         self, *, k, y_history, action_history, valid_k, y_tp1,
-        action_t, aux_tp1, static
+        action_t, static
     ):
         device = y_tp1.device
         loss_pf = torch.tensor(0.0, device=device)
@@ -284,15 +257,12 @@ class Trainer:
             self.model,
             self.adapter.build_model_input(y_pf, action_t[pf_mask], static_pf),
         )
-        pred_pf_aux = self.aux_head_model(y_pf, pred_pf)
 
         return self.loss_computer.compute_pushforward_loss(
             y_pf=y_pf,
             pred_pf=pred_pf,
-            pred_pf_aux=pred_pf_aux,
             target_pf=target_pf,
             action_t=action_t[pf_mask],
-            aux_tp1=aux_tp1[pf_mask],
             static=static_pf,
         )
 
@@ -313,7 +283,6 @@ class Trainer:
             if epoch % self.cfg.training.log_every == 0 and batch_idx == 0:
                 self.logger.run_validation(
                     model=self.ema_model,
-                    aux_model=self.ema_aux,
                     test_loader=self.data.test_loader,
                     adapter=self.adapter,
                     loss_computer=self.loss_computer,
@@ -336,8 +305,6 @@ class Trainer:
             self.checkpoints.save_final(
                 model=self.model,
                 ema_model=self.ema_model,
-                aux_head=self.aux_head_model,
-                ema_aux=self.ema_aux,
             )
             self.checkpoints.remove_resume_files()
             self.logger.log_final_artifact(self.checkpoints.final_path)
@@ -347,8 +314,6 @@ class Trainer:
             self.checkpoints.save_resume(
                 model=self.model,
                 ema_model=self.ema_model,
-                aux_head=self.aux_head_model,
-                ema_aux=self.ema_aux,
                 optimizer=self.optimizer,
                 scheduler=self.scheduler,
                 epoch=end_epoch - 1,

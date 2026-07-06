@@ -296,9 +296,4 @@ if __name__ == "__main__":
     spatial_out = model(test_data, test_action)
     print(f"Modulated LOGLO-FNO - Spatial: {spatial_out.shape}")
 
-    from models.aux_head import AuxHead
-    aux = AuxHead(state_channels=4, depth=16, aux_channels=16, hidden_dim=64).to(device)
-    aux_out = aux(test_data, spatial_out)
-    print(f"AuxHead — Aux: {aux_out.shape}")
-
     torchinfo.summary(model, input_data=[test_data, test_action])

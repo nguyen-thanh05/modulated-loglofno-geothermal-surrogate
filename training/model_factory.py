@@ -1,7 +1,7 @@
 from models.unet3d import UNet3D
 from models.fno_wrapper import FNOWrapper
+from models.uno_wrapper import UNOWrapper
 from models.loglo_fno import ModulatedLOGLO_FNO, VanillaLOGLO_FNO
-from models.transolver3d import TransolverWrapper
 
 
 def create_model(model_cfg, model_type):
@@ -12,6 +12,12 @@ def create_model(model_cfg, model_type):
             hidden_channels=model_cfg['hidden_channels'],
             depth=model_cfg.get('depth', 3),
             channel_multipliers=model_cfg.get('channel_multipliers', None),
+            n_blocks=model_cfg.get('n_blocks', 2),
+            norm=model_cfg.get('norm', True),
+            activation=model_cfg.get('activation', 'gelu'),
+            mid_attn=model_cfg.get('mid_attn', False),
+            is_attn=model_cfg.get('is_attn'),
+            use1x1=model_cfg.get('use1x1', False),
         )
     elif model_type == 'fno':
         return FNOWrapper(
@@ -20,6 +26,20 @@ def create_model(model_cfg, model_type):
             out_channels=model_cfg['out_channels'],
             n_layers=model_cfg['n_layers'],
             hidden_channels=model_cfg['hidden_channels'],
+        )
+    elif model_type == 'uno':
+        return UNOWrapper(
+            in_channels=model_cfg['in_channels'],
+            out_channels=model_cfg['out_channels'],
+            hidden_channels=model_cfg['hidden_channels'],
+            n_layers=model_cfg['n_layers'],
+            uno_out_channels=model_cfg['uno_out_channels'],
+            uno_n_modes=model_cfg['uno_n_modes'],
+            uno_scalings=model_cfg['uno_scalings'],
+            lifting_channels=model_cfg.get('lifting_channels', 256),
+            projection_channels=model_cfg.get('projection_channels', 256),
+            horizontal_skips_map=model_cfg.get('horizontal_skips_map'),
+            channel_mlp_skip=model_cfg.get('channel_mlp_skip', 'linear'),
         )
     elif model_type == 'modulated_loglo':
         return ModulatedLOGLO_FNO(
@@ -39,22 +59,6 @@ def create_model(model_cfg, model_type):
             projection_dim=model_cfg['projection_dim'],
             hidden_dim=model_cfg['hidden_dim'],
             n_blocks=model_cfg['n_blocks'],
-        )
-    elif model_type == 'transolver':
-        return TransolverWrapper(
-            in_channels=model_cfg['in_channels'],
-            out_channels=model_cfg['out_channels'],
-            hidden_dim=model_cfg['hidden_dim'],
-            n_layers=model_cfg['n_layers'],
-            n_head=model_cfg['n_head'],
-            slice_num=model_cfg.get('slice_num', 32),
-            mlp_ratio=model_cfg.get('mlp_ratio', 2),
-            H=model_cfg.get('H', 16),
-            W=model_cfg.get('W', 64),
-            D=model_cfg.get('D', 32),
-            spatial_embed=model_cfg.get('spatial_embed', True),
-            num_bands=model_cfg.get('num_bands', 32),
-            max_freq=model_cfg.get('max_freq', 64.0),
         )
     else:
         raise ValueError(f"Unknown model type: {model_type}")

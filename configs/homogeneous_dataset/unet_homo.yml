@@ -1,14 +1,16 @@
 data:
-  path: '../dataset_v3_hetero/'
-  heterogeneous: true
+  path: '../dataset_v3/'
+  heterogeneous: false
 
 model:
   type: unet3d
-  in_channels: 10   # 4 state + 4 static + 1 rate + 1 mask
+  in_channels: 6    # 4 state + 1 rate + 1 mask
   out_channels: 4
   hidden_channels: 64
-  depth: 4
-  aux_channels: 16
+  channel_multipliers: [1, 2, 2, 3, 4]
+  n_blocks: 2
+  norm: true
+  activation: gelu
 
 training:
   local:
@@ -19,7 +21,7 @@ training:
   hpc:
     batch_size: 4
     lr: 8.0e-4
-    num_epochs: 3000
+    num_epochs: 2000
     test_batch_size: 4
   weight_decay: 1.0e-4
   ema_decay: 0.9995
@@ -31,15 +33,13 @@ training:
   pushforward_k_step_interval: 5000
   warmup_steps: 4500
   min_lr: 3.0e-4
-  epochs_per_run: 1000
+  epochs_per_run: 500
 
 loss:
   use_mse: true
   mse_weight: 3.0
   use_h1: true
   h1_weight: 0.5
-  use_aux: true
-  aux_weight: 0.1
   use_mbe: true
   mbe_weight: 1.0
   use_spectral: true
@@ -52,12 +52,12 @@ loss:
 
 logging:
   writer: true
-  wandb_project: "LOGLOFNO_HETERO_exp"
+  wandb_project: "LOGLOFNO_HOMO_exp"
   wandb_entity: null
   watch_model: false
   log_scalar_every: 10
 
 checkpoints:
   running_dir: "checkpoints/running/"
-  final_path: "checkpoints/unet_d4_hetero_final.pth"
-  resume_path: "checkpoints/running/unet_d4_hetero_resume.pt"
+  final_path: "checkpoints/unet_homo_final.pth"
+  resume_path: "checkpoints/running/unet_homo_resume.pt"

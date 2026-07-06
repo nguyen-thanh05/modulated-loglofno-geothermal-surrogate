@@ -16,9 +16,8 @@ training component:
 | `modulated_loglo_hetero_no_meanfield.yml` | Mean-field pressure loss |
 | `modulated_loglo_hetero_no_pushforward.yml` | Pushforward training |
 
-MSE and the auxiliary BHP/energy loss remain enabled in every run. Disabled
-loss weights are retained at their control values so the boolean toggle is the
-only functional loss change.
+MSE remains enabled in every run. Disabled loss weights are retained at their
+control values so the boolean toggle is the only functional loss change.
 
 All five experiments log to the W&B project
 `MODULATED_LOGLOFNO_HETERO_loss_ablation` and use unique checkpoint filenames.

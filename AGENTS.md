@@ -15,7 +15,7 @@ This repository is a Python research codebase for geothermal surrogate model tra
 
 ## Coding Style & Naming Conventions
 
-Use Python 3.9+ and 4-space indentation. Follow the existing style: `snake_case` for functions and variables, `PascalCase` for model classes, and lowercase package names. Prefer explicit config keys over hard-coded constants when behavior varies by experiment. Name configs as `<model>_<variant>.yml`, such as `fno_m4x16x8_h64_hetero.yml`.
+Use Python 3.9+ and 4-space indentation. Follow the existing style: `snake_case` for functions and variables, `PascalCase` for model classes, and lowercase package names. Prefer explicit config keys over hard-coded constants when behavior varies by experiment. Name configs as `<model>_<variant>.yml`, such as `fno_m8x32x16_h64_hetero.yml`.
 
 ## Testing Guidelines
 

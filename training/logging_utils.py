@@ -13,7 +13,7 @@ class TrainingLogger:
     def writer(self):
         return self.cfg.logging.writer
 
-    def setup(self, *, model, aux_head_model, wandb_run_id):
+    def setup(self, *, model, wandb_run_id):
         if not self.writer:
             return wandb_run_id
 
@@ -38,8 +38,6 @@ class TrainingLogger:
             wandb.config.update({"seed": self.cfg.seed, "hpc": self.cfg.hpc})
             if self.cfg.logging.watch_model:
                 wandb.watch(model, log="all", log_freq=self.cfg.logging.watch_freq)
-                wandb.watch(aux_head_model, log="all",
-                            log_freq=self.cfg.logging.watch_freq)
         return wandb.run.id
 
     def log_training_scalars(self, *, one_step_loss, loss_l2_rel,
@@ -47,7 +45,6 @@ class TrainingLogger:
         wandb.log({
             'Loss/MSE': one_step_loss.loss_mse.item(),
             'Loss/H1': one_step_loss.loss_h1.item(),
-            'Loss/Aux': one_step_loss.loss_aux.item(),
             'Loss/L2_Rel': loss_l2_rel.item(),
             'Loss/MBE': one_step_loss.loss_mbe.item(),
             'Loss/Spectral_Low': one_step_loss.spectral_bands[0].item(),
@@ -60,39 +57,35 @@ class TrainingLogger:
             'Training/lr': lr,
         }, step=global_step)
 
-    def run_validation(self, *, model, aux_model, test_loader, adapter,
+    def run_validation(self, *, model, test_loader, adapter,
                        loss_computer, device, heterogeneous, global_step):
         model.eval()
         with torch.no_grad():
             batch = next(iter(test_loader))
             if heterogeneous:
-                _, _, _, val_y_t, val_y_tp1, val_act_t, _, val_aux_tp1, val_static = batch
+                _, _, _, val_y_t, val_y_tp1, val_act_t, val_static = batch
                 val_static = val_static.to(device)
             else:
-                _, _, _, val_y_t, val_y_tp1, val_act_t, _, val_aux_tp1 = batch
+                _, _, _, val_y_t, val_y_tp1, val_act_t = batch
                 val_static = None
 
             val_y_t = val_y_t.to(device)
             val_y_tp1 = val_y_tp1.to(device)
             val_act_t = val_act_t.to(device)
-            val_aux_target = val_aux_tp1.to(device)
 
             for well in WELL_COORDS:
                 val_act_t[:, 0:2, well[0], well[1]] = 0.
 
             val_input = adapter.build_model_input(val_y_t, val_act_t, val_static)
             val_pred = adapter.forward(model, val_input)
-            val_pred_aux = aux_model(val_y_t, val_pred)
 
             loss_mse_val = loss_computer.mse_fn(val_pred, val_y_tp1)
             loss_h1_val = loss_computer.calculate_weighted_h1_loss(val_pred, val_y_tp1)
-            loss_aux_val = loss_computer.mse_fn(val_pred_aux, val_aux_target)
             loss_l2_rel_val = loss_computer.l2_relative(val_pred, val_y_tp1)
 
             val_log = {
                 'Val_Loss/MSE': loss_mse_val.item(),
                 'Val_Loss/H1': loss_h1_val.item(),
-                'Val_Loss/Aux': loss_aux_val.item(),
                 'Val_Loss/L2_Rel': loss_l2_rel_val.item(),
             }
 
