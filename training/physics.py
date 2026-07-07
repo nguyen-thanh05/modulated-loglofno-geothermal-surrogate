@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 
 
 beta = 8.8e-4       # thermal expansion coefficient [1/°C]
@@ -23,17 +24,24 @@ def compute_mbe_lhs(y_t, y_tp1, phi_m, phi_frac, *,
                     pres_min, pres_max,
                     V=1000.0,
                     temp_min=20.0, temp_max=185.0,
-                    rho_ref=1000.11, P_ref=100.0, T_ref=25.0):
+                    rho_ref=1000.11, P_ref=100.0, T_ref=25.0,
+                    state_clip=(-0.5, 1.5),
+                    exp_clip=(-20.0, 20.0)):
     temp_range = temp_max - temp_min
     pres_range = pres_max - pres_min
 
-    T_m = y_t[:, 0] * temp_range + temp_min
-    T_f = y_t[:, 1] * temp_range + temp_min
-    P_m = y_t[:, 2] * pres_range + pres_min
-    P_f = y_t[:, 3] * pres_range + pres_min
+    y_t_density = y_t.clamp(*state_clip)
 
-    rho_m = rho_ref * torch.exp(c_t * (P_m - P_ref) - beta * (T_m - T_ref))
-    rho_f = rho_ref * torch.exp(c_t * (P_f - P_ref) - beta * (T_f - T_ref))
+    T_m = y_t_density[:, 0] * temp_range + temp_min
+    T_f = y_t_density[:, 1] * temp_range + temp_min
+    P_m = y_t_density[:, 2] * pres_range + pres_min
+    P_f = y_t_density[:, 3] * pres_range + pres_min
+
+    exp_m = (c_t * (P_m - P_ref) - beta * (T_m - T_ref)).clamp(*exp_clip)
+    exp_f = (c_t * (P_f - P_ref) - beta * (T_f - T_ref)).clamp(*exp_clip)
+
+    rho_m = rho_ref * torch.exp(exp_m)
+    rho_f = rho_ref * torch.exp(exp_f)
 
     dP_m = (y_tp1[:, 2] - y_t[:, 2]) * pres_range
     dP_f = (y_tp1[:, 3] - y_t[:, 3]) * pres_range
@@ -49,12 +57,16 @@ def compute_mbe_lhs(y_t, y_tp1, phi_m, phi_frac, *,
 
 
 def compute_mbe_loss(y_t, y_tp1, action_normalized, phi_m, phi_frac, *,
-                     pres_min, pres_max, char_mass=1e7):
+                     pres_min, pres_max, char_mass=1e7, huber_beta=1.0):
     lhs = compute_mbe_lhs(y_t, y_tp1, phi_m, phi_frac,
                           pres_min=pres_min, pres_max=pres_max)
     rhs = compute_mbe_rhs(action_normalized)
     residual = (lhs - rhs) / char_mass
-    return torch.mean(residual ** 2)
+    return F.smooth_l1_loss(
+        residual,
+        torch.zeros_like(residual),
+        beta=huber_beta,
+    )
 
 
 def add_adaptive_noise(y, alpha=(0.0025, 0.0025, 0.025, 0.025), eps=1e-8):

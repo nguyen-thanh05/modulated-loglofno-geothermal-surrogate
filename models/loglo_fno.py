@@ -43,6 +43,19 @@ class MLP_Block(nn.Module):
         x = self.gelu(x)
         x = self.fc2(x)
         return x
+
+
+class RMSNorm3d(nn.Module):
+    """RMSNorm over the channel dim, computed independently at every voxel."""
+    def __init__(self, num_channels, eps=1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(num_channels))
+
+    def forward(self, x):
+        # x: (B, C, D, H, W)
+        rms = x.pow(2).mean(dim=1, keepdim=True).add(self.eps).rsqrt()  # (B, 1, D, H, W)
+        return x * rms * self.weight.view(1, -1, 1, 1, 1)
     
 
 class ModulationEncoder(nn.Module):
@@ -174,6 +187,8 @@ class ModulatedLOGLO_FNO(nn.Module):
              for _ in range(self.n_blocks)]
         )
 
+        # RMSNorm before projection
+        self.rms_norm = RMSNorm3d(num_channels=self.hidden_dim)
         self.projection = MLP_Block(in_dim=self.hidden_dim, out_dim=self.out_dim,
                                     hidden_dim=self.projection_dim)
         nn.init.zeros_(self.projection.fc2.weight)
@@ -207,6 +222,7 @@ class ModulatedLOGLO_FNO(nn.Module):
                 z_hat = z  # block patchifies internally before the local branch
                 z_prime = highfreq_3d(z, kernel_size=self.highfreq_kernel)
 
+        z = self.rms_norm(z)
         spatial_out = self.projection(z) + x_input[:, :self.out_dim]
         return spatial_out
 

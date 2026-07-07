@@ -259,8 +259,8 @@ class UNet3D(nn.Module):
         norm: bool = True,
         activation: str = "gelu",
         is_attn: Optional[Union[Tuple[bool, ...], List[bool]]] = None,
-        mid_attn: bool = False,
-        use1x1: bool = False,
+        mid_attn: bool = True,
+        use1x1: bool = True,
         **kwargs,
     ):
         super().__init__()

@@ -15,9 +15,9 @@ def create_model(model_cfg, model_type):
             n_blocks=model_cfg.get('n_blocks', 2),
             norm=model_cfg.get('norm', True),
             activation=model_cfg.get('activation', 'gelu'),
-            mid_attn=model_cfg.get('mid_attn', False),
+            mid_attn=model_cfg.get('mid_attn', True),
             is_attn=model_cfg.get('is_attn'),
-            use1x1=model_cfg.get('use1x1', False),
+            use1x1=model_cfg.get('use1x1', True),
         )
     elif model_type == 'fno':
         return FNOWrapper(
@@ -36,8 +36,6 @@ def create_model(model_cfg, model_type):
             uno_out_channels=model_cfg['uno_out_channels'],
             uno_n_modes=model_cfg['uno_n_modes'],
             uno_scalings=model_cfg['uno_scalings'],
-            lifting_channels=model_cfg.get('lifting_channels', 256),
-            projection_channels=model_cfg.get('projection_channels', 256),
             horizontal_skips_map=model_cfg.get('horizontal_skips_map'),
             channel_mlp_skip=model_cfg.get('channel_mlp_skip', 'linear'),
         )
