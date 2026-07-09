@@ -10,7 +10,7 @@ model:
   channel_multipliers: [1, 2, 2, 4]
   n_blocks: 2
   norm: true
-  mid_attn: true
+  mid_attn: false
   activation: gelu
 
 training:
@@ -21,7 +21,7 @@ training:
     test_batch_size: 1
   hpc:
     batch_size: 4
-    lr: 1.0e-3
+    lr: 5.0e-4
     num_epochs: 2000
     test_batch_size: 4
   weight_decay: 1.0e-4

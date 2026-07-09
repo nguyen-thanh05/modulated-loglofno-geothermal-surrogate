@@ -15,7 +15,7 @@ def create_model(model_cfg, model_type):
             n_blocks=model_cfg.get('n_blocks', 2),
             norm=model_cfg.get('norm', True),
             activation=model_cfg.get('activation', 'gelu'),
-            mid_attn=model_cfg.get('mid_attn', True),
+            mid_attn=model_cfg.get('mid_attn', False),
             is_attn=model_cfg.get('is_attn'),
             use1x1=model_cfg.get('use1x1', True),
         )
