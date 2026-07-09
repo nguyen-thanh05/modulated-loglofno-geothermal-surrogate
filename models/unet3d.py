@@ -23,7 +23,7 @@ class ResidualBlock(nn.Module):
         out_channels: int,
         activation: str = "gelu",
         norm: bool = False,
-        n_groups: int = 1,
+        n_groups: int = 8,
     ):
         super().__init__()
         self.activation: nn.Module = ACTIVATION_REGISTRY.get(activation, None)
@@ -50,7 +50,7 @@ class ResidualBlock(nn.Module):
 
 
 class AttentionBlock(nn.Module):
-    def __init__(self, n_channels: int, n_heads: int = 1, d_k: Optional[int] = None, n_groups: int = 1):
+    def __init__(self, n_channels: int, n_heads: int = 1, d_k: Optional[int] = None, n_groups: int = 8):
         super().__init__()
         if d_k is None:
             d_k = n_channels
@@ -159,7 +159,7 @@ class ModernUNet3D(nn.Module):
         norm: bool = False,
         ch_mults: Union[Tuple[int, ...], List[int]] = DEFAULT_CH_MULTS,
         is_attn: Union[Tuple[bool, ...], List[bool]] = (False, False, False, False, False),
-        mid_attn: bool = True,
+        mid_attn: bool = False,
         n_blocks: int = 2,
         use1x1: bool = True,
     ) -> None:
@@ -259,7 +259,7 @@ class UNet3D(nn.Module):
         norm: bool = True,
         activation: str = "gelu",
         is_attn: Optional[Union[Tuple[bool, ...], List[bool]]] = None,
-        mid_attn: bool = True,
+        mid_attn: bool = False,
         use1x1: bool = True,
         **kwargs,
     ):
