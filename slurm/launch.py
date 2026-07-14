@@ -54,7 +54,7 @@ def submit_chain(config_path, seed, jobs_per_chain, dry_run=False):
         cmd = [
             'sbatch',
             f'--job-name={job_name}',
-            '--exclude=fc10713,node[01-05,12]',  # Temporary GPU outages
+            '--exclude=fc10713',  # Temporary GPU outages
             f'--export=ALL,CONFIG={config_path},SEED={seed}',
         ]
         if job_ids:
