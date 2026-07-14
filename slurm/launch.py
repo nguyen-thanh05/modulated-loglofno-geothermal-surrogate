@@ -11,6 +11,7 @@ MODELS = {
     'modulated_loglo':   {'display': 'Modulated LOGLO_FNO', 'config_prefix': 'modulated_loglo'},
     'fno_m8x32x16_h64':  {'display': 'FNO m8x32x16 h64', 'config_prefix': 'fno_m8x32x16_h64'},
     'fno_m4x16x8_h128':  {'display': 'FNO m4x16x8 h128', 'config_prefix': 'fno_m4x16x8_h128'},
+    'ufno':              {'display': 'U-FNO',            'config_prefix': 'ufno'},
     'unet':              {'display': 'UNet3D',          'config_prefix': 'unet'},
     'uno':               {'display': 'UNO',             'config_prefix': 'uno'},
     'vanilla_loglo':     {'display': 'Vanilla LOGLO_FNO',  'config_prefix': 'vanilla_loglo'},

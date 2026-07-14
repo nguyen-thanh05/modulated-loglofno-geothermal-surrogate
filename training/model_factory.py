@@ -1,5 +1,6 @@
 from models.unet3d import UNet3D
 from models.fno_wrapper import FNOWrapper
+from models.ufno import UFNO3D
 from models.uno_wrapper import UNOWrapper
 from models.loglo_fno import ModulatedLOGLO_FNO, VanillaLOGLO_FNO
 
@@ -26,6 +27,18 @@ def create_model(model_cfg, model_type):
             out_channels=model_cfg['out_channels'],
             n_layers=model_cfg['n_layers'],
             hidden_channels=model_cfg['hidden_channels'],
+        )
+    elif model_type == 'ufno':
+        return UFNO3D(
+            n_modes=model_cfg['n_modes'],
+            in_channels=model_cfg['in_channels'],
+            out_channels=model_cfg['out_channels'],
+            n_layers=model_cfg['n_layers'],
+            hidden_channels=model_cfg['hidden_channels'],
+            n_unet_layers=model_cfg['n_unet_layers'],
+            lifting_channels=model_cfg.get('lifting_channels', 128),
+            projection_channels=model_cfg.get('projection_channels', 128),
+            unet_dropout=model_cfg.get('unet_dropout', 0.0),
         )
     elif model_type == 'uno':
         return UNOWrapper(

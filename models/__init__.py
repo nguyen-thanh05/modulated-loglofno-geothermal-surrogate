@@ -4,7 +4,13 @@ The heavy model modules are imported lazily so lightweight utilities can import
 submodules without initializing optional dependencies.
 """
 
-__all__ = ["ModulatedLOGLO_FNO", "FNOWrapper", "UNOWrapper", "UNet3D"]
+__all__ = [
+    "ModulatedLOGLO_FNO",
+    "FNOWrapper",
+    "UFNO3D",
+    "UNOWrapper",
+    "UNet3D",
+]
 
 
 def __getattr__(name):
@@ -16,6 +22,10 @@ def __getattr__(name):
         from .fno_wrapper import FNOWrapper
 
         return FNOWrapper
+    if name == "UFNO3D":
+        from .ufno import UFNO3D
+
+        return UFNO3D
     if name == "UNOWrapper":
         from .uno_wrapper import UNOWrapper
 
