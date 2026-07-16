@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-This repository is a Python research codebase for geothermal surrogate model training. Core training code lives in `training/`, model implementations in `models/`, and reusable objective functions in `losses/`. Experiment YAML files are under `configs/homogeneous_dataset/` and `configs/heterogeneous_dataset/`, with ablation configs in `configs/heterogeneous_dataset/loss_ablation/`. Slurm submission helpers are in `slurm/`, and exploratory analysis notebooks are in `notebooks/`. Keep generated artifacts, checkpoints, logs, and large datasets outside the repository unless explicitly needed.
+This repository is a Python research codebase for geothermal surrogate model training. Core training code lives in `training/`, model implementations in `models/`, and reusable objective functions in `losses/`. Experiment YAML files are under `configs/homogeneous_dataset/` and `configs/heterogeneous_dataset/`, with ablation configs in `configs/heterogeneous_dataset/loss_ablation/`. Slurm submission helpers are in `slurm/`, and exploratory analysis notebooks are in `notebooks/`. The manuscript lives under `paper/` but is out of scope for code work: do not search, read, or cite `paper/` unless the user is editing under `paper/` or explicitly asks about the manuscript. Keep generated artifacts, checkpoints, logs, and large datasets outside the repository unless explicitly needed.
 
 ## Build, Test, and Development Commands
 

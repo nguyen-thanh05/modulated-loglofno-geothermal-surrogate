@@ -1,0 +1,13 @@
+---
+description: When editing the manuscript, ground claims in the codebase
+globs: paper/**
+alwaysApply: false
+---
+
+# Paper / manuscript edits
+
+When working under `paper/`, use the rest of this repository as ground truth for what was implemented:
+
+- Prefer `training/`, `models/`, `losses/`, `configs/`, and `slurm/` over memory for architecture, losses, hyperparameters, data splits, and experiment setup.
+- Do not invent experiment numbers, metrics, or config values; read them from the relevant files or say what is unknown.
+- Manuscript wording may differ from code comments; the codebase is the source of truth for behavior and results claims tied to this project.

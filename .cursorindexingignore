@@ -1,0 +1,4 @@
+# Keep the manuscript out of semantic/codebase search so code tasks
+# do not auto-retrieve LaTeX/paper content. Files remain readable via
+# @-mention or explicit reads when working on the paper.
+paper/
