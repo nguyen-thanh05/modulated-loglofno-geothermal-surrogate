@@ -19,7 +19,7 @@ training:
     test_batch_size: 1
   hpc:
     batch_size: 4
-    lr: 8.0e-4
+    lr: 1.2e-3
     num_epochs: 2000
     test_batch_size: 4
   weight_decay: 1.0e-4
