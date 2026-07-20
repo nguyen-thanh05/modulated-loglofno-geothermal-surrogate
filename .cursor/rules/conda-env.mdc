@@ -1,0 +1,23 @@
+---
+description: Always use the Anaconda env named torch for Python work
+alwaysApply: true
+---
+
+# Python Environment
+
+Use the existing Anaconda environment named `torch`. Do not search for, create, or activate any other venv/conda env.
+
+Before running Python commands in a new shell:
+
+```powershell
+conda activate torch
+```
+
+On Unix shells:
+
+```bash
+conda activate torch
+```
+
+- Prefer `python` / `pip` from this env after activation.
+- Do not spend time discovering environments, inventing `.venv`, or asking which env to use unless the user overrides this.

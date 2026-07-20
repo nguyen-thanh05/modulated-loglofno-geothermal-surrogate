@@ -6,8 +6,8 @@ This repository is a Python research codebase for geothermal surrogate model tra
 
 ## Build, Test, and Development Commands
 
-- `python -m venv .venv && source .venv/bin/activate`: create and activate a local environment.
-- `pip install -e . -r requirements.txt`: install the package and training dependencies.
+- `conda activate torch`: always use the Anaconda env named `torch` for local Python work. Do not search for or create another env.
+- `pip install -e . -r requirements.txt`: install the package and training dependencies (with `torch` activated).
 - `python training/train.py --config configs/homogeneous_dataset/modulated_loglo_homo.yml --seed 42`: run a local training job using one YAML config. Config data paths must point to available `.npy` datasets.
 - `python slurm/launch.py --models modulated_loglo --variants homo --seeds '{"modulated_loglo":"42"}' --dry-run`: preview Slurm jobs without submitting.
 - `python slurm/launch_loss_ablation.py --dry-run`: preview the loss ablation job chain.

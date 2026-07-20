@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import copy
 import os
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -12,13 +13,16 @@ import numpy as np
 import torch
 import yaml
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from losses.functional_losses import LpLoss
 from training.constants import CHANNEL_NAMES, WELL_COORDS
 from training.dataset import ARDataset
 from training.model_adapters import create_adapter
 from training.model_factory import create_model
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SEEDS = (5, 42, 2026)
 SLICE_SPECS = (
     ('d10', 'depth=10', lambda vol: vol[10, :, :]),
@@ -90,13 +94,21 @@ def load_model(cfg, seed, device):
 
     model_cfg = cfg_seed['model']
     model_type = model_cfg['type']
-    model = create_model(model_cfg, model_type).to(device)
+    model = create_model(model_cfg, model_type)
     adapter = create_adapter(model_type, heterogeneous=True)
 
-    ckpt = torch.load(final_path, map_location=device, weights_only=False)
-    if 'ema_model' not in ckpt:
+    ckpt = torch.load(final_path, map_location='cpu', weights_only=False)
+    if not isinstance(ckpt, dict) or 'ema_model' not in ckpt:
         raise KeyError(f'Checkpoint {final_path} has no ema_model weights')
-    model.load_state_dict(ckpt['ema_model'])
+    ema_state = ckpt['ema_model']
+    if '_metadata' in ema_state:
+        ema_state = ema_state.copy()
+        del ema_state['_metadata']
+    model.load_state_dict(ema_state)
+    del ema_state
+    del ckpt
+
+    model = model.to(device)
     model.eval()
     return model, adapter, final_path
 
@@ -254,8 +266,8 @@ def parse_args():
         help='cuda / cpu (default: cuda if available)',
     )
     parser.add_argument(
-        '--output-root', type=str, default='eval_results/single_trajectory',
-        help='Root directory for outputs',
+        '--output-root', type=str, default='evaluation_results/single_trajectory',
+        help='Root directory for outputs (default: evaluation_results/single_trajectory)',
     )
     return parser.parse_args()
 
